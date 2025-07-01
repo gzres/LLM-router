@@ -13,7 +13,7 @@ use tracing::info;
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let config = load_config("config.yaml");
+    let config = load_config("config.yml");
     let state = AppState::new(config);
 
     let state_clone = state.clone();

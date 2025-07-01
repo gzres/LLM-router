@@ -105,11 +105,15 @@ async fn test_list_models() {
     let test_models = vec![
         ModelInfo {
             id: "model-1".to_string(),
-            extra: Default::default(),
+            object: "model".to_string(),
+            created: 0,
+            owned_by: "someone".to_string(),
         },
         ModelInfo {
             id: "model-2".to_string(),
-            extra: Default::default(),
+            object: "model".to_string(),
+            created: 0,
+            owned_by: "someone".to_string(),
         },
     ];
 

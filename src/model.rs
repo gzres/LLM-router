@@ -8,8 +8,14 @@ use tracing::{error, info};
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ModelInfo {
     pub id: String,
-    #[serde(flatten)]
-    pub extra: serde_json::Value,
+    pub object: String,
+    pub created: i64,
+    pub owned_by: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ModelsResponse {
+    data: Vec<ModelInfo>,
 }
 
 #[derive(Clone)]
@@ -46,9 +52,9 @@ pub async fn refresh_models_loop(state: AppState) {
                 .send()
                 .await
             {
-                Ok(resp) => match resp.json::<HashMap<String, Vec<ModelInfo>>>().await {
-                    Ok(json) => {
-                        for model in json.get("data").cloned().unwrap_or_default() {
+                Ok(resp) => match resp.json::<ModelsResponse>().await {
+                    Ok(models_response) => {
+                        for model in models_response.data {
                             routing_table.insert(model.id.clone(), backend.url.clone());
                             model_cache.push(model);
                         }
@@ -60,7 +66,11 @@ pub async fn refresh_models_loop(state: AppState) {
         }
 
         *state.routing_table.write().await = routing_table;
+        let model_count = model_cache.len();
         *state.model_cache.write().await = model_cache;
-        info!("Model routing table refreshed.");
+        info!(
+            "Model routing table refreshed. {} models available.",
+            model_count
+        );
     }
 }
