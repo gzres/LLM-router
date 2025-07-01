@@ -1,14 +1,13 @@
-use crate::model::{AppState, ModelInfo};
 use crate::config::AuthConfig;
+use crate::model::{AppState, ModelInfo};
 use axum::{
+    Json,
     body::Body,
     extract::State,
     http::{HeaderMap, Response, StatusCode, header},
-    response::IntoResponse,
-    Json,
 };
-use http_body_util::BodyExt;
 use base64::Engine;
+use http_body_util::BodyExt;
 use serde_json::Value;
 use std::collections::HashMap;
 use tracing::error;
@@ -36,6 +35,14 @@ pub async fn forward_completion(
     forward(state, headers, req_body, "/v1/completions").await
 }
 
+async fn error_response(status: StatusCode, message: &str) -> Response<Body> {
+    Response::builder()
+        .status(status)
+        .header("Content-Type", "text/plain")
+        .body(Body::from(message.to_string()))
+        .unwrap()
+}
+
 async fn forward(
     state: AppState,
     mut headers: HeaderMap,
@@ -50,11 +57,10 @@ async fn forward(
     let routing_table = state.routing_table.read().await;
     if let Some(backend_url) = routing_table.get(model) {
         let url = format!("{}{}", backend_url, endpoint);
-        
+
         // Find backend config to get auth settings
-        let backend_config = state.config.backends.iter()
-            .find(|b| b.url == *backend_url);
-        
+        let backend_config = state.config.backends.iter().find(|b| b.url == *backend_url);
+
         // Apply authentication if configured
         if let Some(backend) = backend_config {
             if let Some(auth) = &backend.auth {
@@ -62,24 +68,23 @@ async fn forward(
                     AuthConfig::Bearer { token } => {
                         headers.insert(
                             header::AUTHORIZATION,
-                            format!("Bearer {}", token).parse().unwrap()
+                            format!("Bearer {}", token).parse().unwrap(),
                         );
-                    },
+                    }
                     AuthConfig::Basic { username, password } => {
-                        let credentials = base64::engine::general_purpose::STANDARD.encode(
-                            format!("{}:{}", username, password)
-                        );
+                        let credentials = base64::engine::general_purpose::STANDARD
+                            .encode(format!("{}:{}", username, password));
                         headers.insert(
                             header::AUTHORIZATION,
-                            format!("Basic {}", credentials).parse().unwrap()
+                            format!("Basic {}", credentials).parse().unwrap(),
                         );
-                    },
+                    }
                     AuthConfig::CustomHeader { name, value } => {
                         headers.insert(
                             header::HeaderName::from_bytes(name.as_bytes()).unwrap(),
-                            value.parse().unwrap()
+                            value.parse().unwrap(),
                         );
-                    },
+                    }
                 }
             }
         }
@@ -102,15 +107,15 @@ async fn forward(
             }
             Err(err) => {
                 error!("Forwarding failed: {}", err);
-                (
+                error_response(
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Internal forwarding error",
                 )
-                    .into_response()
+                .await
             }
         }
     } else {
-        (StatusCode::BAD_REQUEST, "Unknown model").into_response()
+        error_response(StatusCode::BAD_REQUEST, "Unknown model").await
     }
 }
 

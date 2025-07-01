@@ -12,7 +12,8 @@ LLM Router is a high-performance proxy service written in Rust that provides a u
 - High performance thanks to Rust and Axum
 
 ## Requirements
-- Rust 1.75 or higher
+
+- Rust 1.81 or higher
 - Docker (optional, for containerized deployment)
 - One or more LLM backends with OpenAI compatible API
 
@@ -87,3 +88,49 @@ This project is licensed under the MIT License — see the LICENSE file for deta
 
 ## Support
 For support, please open an issue in the GitHub repository.
+
+## Testing
+
+The project includes comprehensive test coverage:
+
+### Unit Tests
+
+- Config parsing and validation
+- Model management and routing
+- Request forwarding and authentication
+- HTTP endpoint handlers
+
+### Integration Tests
+
+- Full request flow testing
+- Backend communication
+- Authentication handling
+
+Run the tests with:
+
+```bash
+# Run all tests
+cargo test
+
+# Run specific test
+cargo test test_name
+
+# Run tests with logging
+RUST_LOG=debug cargo test
+```
+
+### Code Coverage
+
+The project uses LLVM coverage tools to track test coverage. Maintain a minimum coverage threshold of 80% for the core
+functionality.
+
+To run coverage analysis:
+
+```bash
+# Install cargo-llvm-cov if not already installed
+cargo +stable install cargo-llvm-cov --locked
+# Generate coverage report
+cargo llvm-cov
+# Generate detailed HTML report
+cargo llvm-cov --html
+```
