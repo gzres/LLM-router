@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use std::fs;
+use std::path::Path;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -25,7 +26,27 @@ pub enum AuthConfig {
     CustomHeader { name: String, value: String },
 }
 
-pub fn load_config(path: &str) -> Config {
-    let content = fs::read_to_string(path).expect("Failed to read config");
-    serde_yml::from_str(&content).expect("Failed to parse config")
+fn try_load_config<P: AsRef<Path>>(path: P) -> Option<Config> {
+    fs::read_to_string(path)
+        .ok()
+        .and_then(|contents| serde_yml::from_str(&contents).ok())
+}
+
+pub fn load_config(filename: &str) -> Config {
+    if let Some(config) = try_load_config(filename) {
+        return config;
+    }
+
+    let extensions = ["yml", "yaml"];
+
+    if let Some(stem) = Path::new(filename).file_stem().and_then(|s| s.to_str()) {
+        for ext in extensions {
+            let path = format!("{}.{}", stem, ext);
+            if let Some(config) = try_load_config(&path) {
+                return config;
+            }
+        }
+    }
+
+    panic!("Configuration file not found. Check if config.yml or config.yaml file exists");
 }
