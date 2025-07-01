@@ -26,7 +26,15 @@ pub enum AuthConfig {
     CustomHeader { name: String, value: String },
 }
 
-fn try_load_config<P: AsRef<Path>>(path: P) -> Option<Config> {
+pub fn try_load_config<P: AsRef<Path>>(path: P) -> Option<Config> {
+    let path = path.as_ref();
+
+    if let Some(extension) = path.extension().and_then(|e| e.to_str()) {
+        if extension != "yml" && extension != "yaml" {
+            return None;
+        }
+    }
+
     fs::read_to_string(path)
         .ok()
         .and_then(|contents| serde_yml::from_str(&contents).ok())
