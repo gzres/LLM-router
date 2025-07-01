@@ -1,0 +1,16 @@
+# Model information refresh interval (in seconds)
+refresh_interval: 300  # 5 minutes
+
+# List of LLM backends
+backends:
+  - name: "local-llama"
+    url: "http://localhost:8000"
+  
+  - name: "ollama-server"
+    url: "http://ollama:11434"
+  
+  - name: "openai-proxy"
+    url: "http://openai-proxy:3000"
+
+  - name: "anthropic-proxy"
+    url: "http://anthropic-proxy:4000"
