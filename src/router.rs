@@ -1,12 +1,14 @@
 use crate::model::{AppState, ModelInfo};
+use crate::config::AuthConfig;
 use axum::{
     body::Body,
     extract::State,
-    http::{HeaderMap, Response, StatusCode},
+    http::{HeaderMap, Response, StatusCode, header},
     response::IntoResponse,
     Json,
 };
 use http_body_util::BodyExt;
+use base64::Engine;
 use serde_json::Value;
 use std::collections::HashMap;
 use tracing::error;
@@ -36,7 +38,7 @@ pub async fn forward_completion(
 
 async fn forward(
     state: AppState,
-    headers: HeaderMap,
+    mut headers: HeaderMap,
     req_body: Body,
     endpoint: &str,
 ) -> Response<Body> {
@@ -48,6 +50,40 @@ async fn forward(
     let routing_table = state.routing_table.read().await;
     if let Some(backend_url) = routing_table.get(model) {
         let url = format!("{}{}", backend_url, endpoint);
+        
+        // Find backend config to get auth settings
+        let backend_config = state.config.backends.iter()
+            .find(|b| b.url == *backend_url);
+        
+        // Apply authentication if configured
+        if let Some(backend) = backend_config {
+            if let Some(auth) = &backend.auth {
+                match auth {
+                    AuthConfig::Bearer { token } => {
+                        headers.insert(
+                            header::AUTHORIZATION,
+                            format!("Bearer {}", token).parse().unwrap()
+                        );
+                    },
+                    AuthConfig::Basic { username, password } => {
+                        let credentials = base64::engine::general_purpose::STANDARD.encode(
+                            format!("{}:{}", username, password)
+                        );
+                        headers.insert(
+                            header::AUTHORIZATION,
+                            format!("Basic {}", credentials).parse().unwrap()
+                        );
+                    },
+                    AuthConfig::CustomHeader { name, value } => {
+                        headers.insert(
+                            header::HeaderName::from_bytes(name.as_bytes()).unwrap(),
+                            value.parse().unwrap()
+                        );
+                    },
+                }
+            }
+        }
+
         match state
             .client
             .post(url)

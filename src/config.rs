@@ -11,6 +11,18 @@ pub struct Config {
 pub struct BackendConfig {
     pub name: String,
     pub url: String,
+    pub auth: Option<AuthConfig>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(tag = "type")]
+pub enum AuthConfig {
+    #[serde(rename = "bearer")]
+    Bearer { token: String },
+    #[serde(rename = "basic")]
+    Basic { username: String, password: String },
+    #[serde(rename = "header")]
+    CustomHeader { name: String, value: String },
 }
 
 pub fn load_config(path: &str) -> Config {
