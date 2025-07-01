@@ -1,6 +1,8 @@
 # LLM Router Service
 
-LLM Router is a high-performance proxy service written in Rust that provides a unified interface for multiple Language Learning Model (LLM) backends. It dynamically discovers available models and routes requests to appropriate backends based on the requested model.
+LLM Router is a high-performance proxy service written in Rust that provides a unified interface for multiple Large
+Language Model (LLM) backends. It dynamically discovers available models and routes requests to appropriate backends
+based on the requested model.
 
 ## Features
 - Dynamic model discovery from multiple backends
