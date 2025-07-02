@@ -15,6 +15,7 @@ pub struct ModelInfo {
 
 #[derive(Debug, Deserialize)]
 struct ModelsResponse {
+    object: String,
     data: Vec<ModelInfo>,
 }
 
