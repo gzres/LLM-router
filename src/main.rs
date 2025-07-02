@@ -5,7 +5,7 @@ mod router;
 use axum::{Router, routing::get, routing::post};
 use config::load_config;
 use model::{AppState, refresh_models_loop};
-use router::{forward_completion, forward_request, healthz, list_models};
+use router::{forward_completion, forward_request, healthz, list_models, main_page};
 use std::net::SocketAddr;
 use tracing::info;
 
@@ -26,6 +26,7 @@ async fn main() {
         .route("/v1/chat/completions", post(forward_request))
         .route("/v1/completions", post(forward_completion))
         .route("/healthz", get(healthz))
+        .route("/", get(main_page))
         .with_state(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));

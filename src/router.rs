@@ -122,3 +122,6 @@ async fn forward(
 pub async fn healthz() -> &'static str {
     "OK"
 }
+pub async fn main_page() -> &'static str {
+    "Ollama is running"
+}
