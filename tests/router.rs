@@ -17,6 +17,8 @@ use serde_json::json;
 use tower::ServiceExt;
 use wiremock::matchers::{header, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
+use llm_router::model::{Tag, TagDetails};
+use llm_router::router::list_tags;
 
 async fn setup_test_app(mock_server_url: String) -> Router {
     let config = Config {
@@ -129,6 +131,52 @@ async fn test_list_models() {
     assert!(models.iter().any(|m| m.id == "model-1"));
     assert!(models.iter().any(|m| m.id == "model-2"));
 }
+
+#[tokio::test]
+async fn test_list_tags() {
+    let config = Config {
+        refresh_interval: 300,
+        backends: vec![BackendConfig {
+            name: "test".to_string(),
+            url: "http://localhost:8000".to_string(),
+            auth: None,
+        }],
+    };
+
+    let state = AppState::new(config);
+
+    let test_tags = vec![
+        Tag {
+            name: "model-1".to_string(),
+            model: "model-1".to_string(),
+            modified_at: "2025-07-02T09:22:44.205115046Z".to_string(),
+            size: 15486899116,
+            digest: "test-digest".to_string(),
+            details: TagDetails {
+                parent_model: "".to_string(),
+                format: "gguf".to_string(),
+                family: "test".to_string(),
+                families: vec!["test".to_string()],
+                parameter_size: "7B".to_string(),
+                quantization_level: "Q4_K_M".to_string(),
+            },
+        },
+    ];
+
+    {
+        let mut cache = state.tag_cache.write().await;
+        *cache = test_tags;
+    }
+
+    let response = list_tags(State(state.clone())).await;
+
+    let tags = response.0.models;
+    assert_eq!(tags.len(), 1);
+    assert_eq!(tags[0].name, "model-1");
+    assert_eq!(tags[0].details.format, "gguf");
+    assert_eq!(tags[0].size, 15486899116);
+}
+
 
 #[tokio::test]
 async fn test_forward_completion() {

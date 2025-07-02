@@ -1,5 +1,5 @@
 use crate::config::AuthConfig;
-use crate::model::{AppState, ModelInfo};
+use crate::model::{AppState, ModelInfo, TagResponse, Tag, TagDetails};
 use axum::{
     Json,
     body::Body,
@@ -18,6 +18,14 @@ pub async fn list_models(
     let models = state.model_cache.read().await.clone();
     Json(HashMap::from([("data", models)]))
 }
+
+pub async fn list_tags(
+    State(state): State<AppState>,
+) -> Json<TagResponse> {
+    let tags = state.tag_cache.read().await.clone();
+    Json(TagResponse { models: tags })
+}
+
 
 pub async fn forward_request(
     State(state): State<AppState>,

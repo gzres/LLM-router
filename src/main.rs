@@ -8,6 +8,7 @@ use model::{AppState, refresh_models_loop};
 use router::{forward_completion, forward_request, healthz, list_models, main_page};
 use std::net::SocketAddr;
 use tracing::info;
+use crate::router::list_tags;
 
 #[tokio::main]
 async fn main() {
@@ -23,6 +24,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/v1/models", get(list_models))
+        .route("/api/tags", get(list_tags))
         .route("/v1/chat/completions", post(forward_request))
         .route("/v1/completions", post(forward_completion))
         .route("/healthz", get(healthz))
