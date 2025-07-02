@@ -1,27 +1,35 @@
 # Stage 1: Builder
-FROM rust:1.88-alpine as builder
+FROM rust:1.88-slim AS builder
 
-RUN apk add --no-cache musl-dev openssl-dev pkgconfig
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    build-essential \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
-COPY config.yaml ./
+COPY config.yml ./
 
 RUN cargo build --release
 
 # Stage 2: Runtime
-FROM alpine:3.22
+FROM debian:bookworm-slim
 
-RUN apk add --no-cache libgcc
+RUN apt-get update && apt-get install -y \
+    libssl3 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN adduser -D appuser
+RUN adduser --disabled-password --gecos '' appuser
 
 WORKDIR /app
 
 COPY --from=builder /app/target/release/LLM-router /app/LLM-router
-COPY --from=builder /app/config.yaml /app/config.yaml
+COPY --from=builder /app/config.yml /app/config.yml
 
 RUN chown -R appuser:appuser /app
 
